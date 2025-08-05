@@ -48,19 +48,15 @@ def parse_string(input_str):
     return result
 
 def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2text\runs\detect\train16\weights\best.pt'):
-    # Load the YOLOv8 model
+
     model = YOLO(model_path)
-    
-    # Read the image
     image = cv2.imread(image_path)
     if image is None:
         print(f"Error: Could not read image at {image_path}")
         return
-    
-    # Run YOLOv8 inference
+
     results = model(image)
-    
-    # Extract detections
+
     detections = []
     for result in results:
         boxes = result.boxes.xyxy.cpu().numpy()
@@ -86,8 +82,7 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
     if not detections:
         print("No letters detected in the image.")
         return
-    
-    # Sort detections from top to bottom
+
     detections.sort(key=lambda x: x['center'][1])
     
     rows = []
@@ -110,7 +105,6 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
 
     print("\nDetected text (top to bottom, left to right with spacing):\n")
 
-    # Process header rows
     header_processed = 0
     shift_fields = False
     left_out = 0
@@ -133,7 +127,6 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
             prev_right = det['box'][2]
         
         if i == 0:
-            # More robust date parsing
             date_parts = re.findall(r'\d+', row_text)
             if len(date_parts) >= 3:
                 print(f'Дата: {date_parts[0]}.{date_parts[1]}.20{date_parts[2]}')
@@ -158,33 +151,23 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
         elif i == 3 and not shift_fields:
             print('От кого ', row_text)
             header_processed += 1
-
-    # Process item rows with complete name preservation
-# [Previous header processing code remains the same]
-
-    # Process item rows with proper multi-row merging
     print("\nItems:")
     items = []
-    i = 4 - left_out  # Start at row 4, adjusted for left_out
+    i = 4 - left_out 
 
     while i < len(rows):
         row_text = "".join(det['class'] for det in rows[i]).strip()
-        
-        # Check for total row
+
         if i == len(rows) - 1:
             if row_text.isdigit(): 
                 print(f"\nИтого: {row_text}")
                 break
             else:
                 print("Итого нет")
-        
-        # Process item rows
         if re.match(r'^\d', row_text):
 
             ordinal = re.match(r'^\d+', row_text).group()
             remaining_text = row_text[len(ordinal):].strip()
-            
-            # Extract name, quantity, unit, price and sum
             item_match = re.match(r'^([^\d]+)(\d+)\s*([^\d]+)?\s*(\d{1,2})\s*(\d+)$', remaining_text)
             if item_match:
                 name = item_match.group(1).strip()
@@ -192,9 +175,6 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
                 unit = item_match.group(3).strip() if item_match.group(3) else None
                 price = item_match.group(4)
                 item_sum = item_match.group(5)
-                
-                # Format the sum with thousand separators
-                # formatted_sum = f"{int(item_sum):,}".replace(",", " ") if item_sum.isdigit() else item_sum
                 
                 items.append({
                     'ordinal': ordinal,
@@ -206,7 +186,6 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
                 })
         i += 1
 
-    # Print items with proper formatting
     for item in items:
         output = f"{item['ordinal']}. {item['name']} {item['quantity']}"
         if item['unit']:
@@ -214,8 +193,7 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
         if item['price'] and item['sum']:
             output += f" | {item['price']} {item['sum']}"
         print(output)
-    
-    # Visualization (optional)
+
     for row in rows:
         for det in row:
             x1, y1, x2, y2 = map(int, det['box'])
@@ -230,3 +208,4 @@ def detect_and_print_letters(image_path, model_path=r'C:\Users\user\Desktop\img2
 if __name__ == "__main__":
     image_path = r"C:\Users\user\Desktop\img2text\new_test\1108716_800.jpg"  # Replace with your image path
     detect_and_print_letters(image_path)
+
